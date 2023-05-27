@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react"
 import { Container } from "@mui/system"
-import { Button } from "@mui/material"
-import axios from "axios"
-import ArtistCart from "./components/ArtistCart"
+import { Box, Typography } from "@mui/material"
+import ArtistCard from "./components/ArtistCard"
+import { TextField } from "@mui/material"
 
 const client_id = "80811485dc73429aa0f0f3d36c8f2bf4"
 const secret_id = "abf3c707bf194c848793be00945597b7"
@@ -11,7 +11,7 @@ const App = () => {
   const [accessToken, setAccessToken] = useState({})
   const [artist, setArtist] = useState({})
   const [albums, setAlbums] = useState([])
-  const [response, setResponse] = useState({})
+  const [artistName, setArtistName] = useState()
   const [errorMessage, setErrorMessage] = useState()
 
   const artistParameters = {
@@ -41,29 +41,65 @@ const App = () => {
 
   useEffect(() => {
     searchArtist()
-  }, [accessToken])
+  }, [accessToken, artistName])
+
+  useEffect(() => {
+    searchAlbums()
+  }, [artist])
 
   const searchArtist = async () => {
+    if (artist === undefined) return
+
     await fetch(
-      "https://api.spotify.com/v1/search?q=Beyonce&type=artist",
+      "https://api.spotify.com/v1/search?q=" + artistName + "&type=artist",
       artistParameters
     )
       .then((res) => res.json())
-      .then((data) => setArtist(data?.artists?.items[0]))
+      .then((data) => {
+        if (data === undefined) return
 
+        setArtist(data?.artists?.items[0])
+      })
+      .catch((e) => console.log(e))
+  }
+
+  const searchAlbums = async () => {
+    if (artist === undefined) return
     await fetch(
-      "https://api.spotify.com/v1/artists/" + artist?.id + "/albums",
+      "https://api.spotify.com/v1/artists/" + artist.id + "/albums",
       artistParameters
     )
       .then((res) => res.json())
       .then((data) => setAlbums(data?.items))
   }
 
+  const handleInput = (e) => {
+    if (e.key === "Enter") setArtistName(e.target.value)
+  }
+
   return (
-    <Container>
-      <h1>Hello Welcome</h1>
-      <Button variant="text">Beyonce</Button>
-      <ArtistCart artist={artist} albums={albums} />
+    <Container maxWidth="sm" sx={{ pt: 10 }}>
+      <Box
+        sx={{
+          display: "flex",
+          flexDirection: "column",
+          mb: 8,
+        }}
+      >
+        <Typography color="light">Hello Welcome</Typography>
+        <TextField
+          id="standard-basic"
+          label="Enter an artist"
+          variant="filled"
+          color="secondary"
+          size="large"
+          onKeyDown={(e) => {
+            handleInput(e)
+          }}
+        />
+      </Box>
+
+      <ArtistCard artist={artist} albums={albums} />
     </Container>
   )
 }
